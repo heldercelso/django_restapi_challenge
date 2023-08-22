@@ -1,0 +1,39 @@
+version: "3.9"
+# command to access container already running:
+# - docker exec -ti <container> bash
+# - command on gitbash: winpty docker exec -ti <container> bash
+services:
+    web:
+        image: back_end_api_django
+        container_name: web
+        build: ./django-rest-api
+        command: python -u manage.py runserver 0.0.0.0:8080
+        volumes:
+            - ./django-rest-api:/code
+        ports:
+            - "8080:8080"
+        entrypoint: /docker-entrypoint.sh
+        depends_on:
+            db:
+                condition: service_healthy
+
+    db:
+        image: postgres:13.4-alpine
+        container_name: db
+        volumes:
+            - ./postgres_data_django:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_DB=my_app_database
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=pass_myapp
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready --username=postgres"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+volumes:
+    django-rest-api:
+    postgres_data_django:
